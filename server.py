@@ -13,7 +13,6 @@ app = flask.Flask("app")
 
 
 class HttpError(Exception):
-
     def __init__(self, status_code: int, error_message: dict | str | list):
         self.status_code = status_code
         self.error_message = error_message
@@ -75,6 +74,13 @@ class AdView(MethodView):
         ad = add_ad(ad)
         return jsonify(ad.dict)
 
+    def patch(self, ad_id: int):
+        json_data = validate(request.json, schema.UpdateAd)
+        ad = get_ad_by_id(ad_id)
+        for field, value in json_data.items():
+            setattr(ad, field, value)
+        request.session.commit()
+        return jsonify(ad.dict)
 
     def delete(self, ad_id: int):
         ad = get_ad_by_id(ad_id)
@@ -86,6 +92,7 @@ class AdView(MethodView):
 ad_view = AdView.as_view("ad")
 
 app.add_url_rule("/ad/", view_func=ad_view, methods=["POST"])
-app.add_url_rule("/ad/<int:ad_id>/", view_func=ad_view, methods=["GET", "DELETE"])
+app.add_url_rule("/ad/<int:ad_id>/", view_func=ad_view, methods=["GET", "PATCH", "DELETE"])
 
-app.run()
+if __name__ == "__main__":
+    app.run()
